@@ -142,7 +142,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if args.profile:
         profile_key = args.profile
     elif sys.stdin.isatty():
-        profile_key = choose_profile_interactively()
+        try:
+            profile_key = choose_profile_interactively()
+        except KeyboardInterrupt:  # Ctrl+C at the menu: exit cleanly, no traceback
+            print("\nCancelled.")
+            return 130
         print()
     else:
         profile_key = DEFAULT_PROFILE_KEY

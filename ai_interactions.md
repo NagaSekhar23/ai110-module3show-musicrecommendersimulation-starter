@@ -41,7 +41,7 @@ AI log → optional extensions → verification → GitHub). Key constraints in 
 | `src/profiles.py` | New: 3 core + 4 adversarial profiles |
 | `src/main.py` | Rewrote the CLI: menu, flags, results table; fixed the broken import |
 | `src/evaluate.py` | New: evaluation and experiment report |
-| `tests/*` | 92 new tests (the 2 starter tests kept unchanged, 94 total) |
+| `tests/*` | 94 new tests (the 2 starter tests kept unchanged, 96 total) |
 | `pytest.ini`, `src/__init__.py`, `tests/__init__.py`, `tests/conftest.py` | Test/import configuration |
 | `requirements.txt` | Reduced to `pytest` (pandas/streamlit were unused) |
 | `README.md`, `model_card.md`, `ai_interactions.md`, `docs/evaluation_output.txt` | Documentation and saved evaluation output |
@@ -66,6 +66,15 @@ What the agent checked itself (with tool output, not assumptions):
 - **Checking the tests catch bugs:** the agent temporarily broke the energy
   formula; 8 tests failed. Then it restored the file. This showed the suite
   isn't just passing trivially.
+- **Final review fixes:** a CSV row with *extra* values (e.g. a stray
+  trailing field) was silently accepted; it is now skipped like other
+  malformed rows. Ctrl+C at the interactive menu printed a Python traceback;
+  it now prints "Cancelled." and exits. A test for that first failed because
+  it patched `input` after the menu had already captured it, so the test was
+  corrected, not the app (the real-terminal run already behaved correctly).
+- **Interactive menu in a real terminal:** run inside a pseudo-terminal with
+  invalid, out-of-range, empty and Ctrl+C input to confirm the real menu path,
+  not just the simulated-input unit tests.
 - **Hand-checked numbers:** the worked example in the README
   (2.00 + 1.00 + 0.98 + 0.41 = 4.39) and the exact 4.44 tie between the two
   rock songs were checked against program output.
@@ -76,10 +85,11 @@ AI suggestions that needed **human** review (please confirm these yourself):
   estimates, not real measurements. Check they feel reasonable to you.
 - The interpretation of "more relevant vs. just different" in the experiment
   is a judgment call.
-- The "Personal Reflection" in `model_card.md` is an AI draft and should be
-  rewritten in your own words.
-- The interactive menu was tested with simulated input in unit tests. Try it
-  yourself in a real terminal with `python -m src.main`.
+- The "Personal Reflection" in `model_card.md` started as an AI draft; it was
+  replaced with a reflection written by the author.
+- The interactive menu was tested with simulated input in unit tests and in a
+  pseudo-terminal by the agent. A quick manual try with `python -m src.main`
+  is still worthwhile.
 
 **Which decisions came from the human author vs. the AI?**
 

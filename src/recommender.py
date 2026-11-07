@@ -123,6 +123,11 @@ def _parse_row(row: Mapping[str, Optional[str]]) -> Dict:
     """
     song: Dict = {}
 
+    # csv.DictReader stores surplus values under the key None. A row with more
+    # values than the header is misaligned (e.g. an unquoted comma in a title).
+    if row.get(None):
+        raise ValueError("row has more values than the header")
+
     raw_id = (row.get("id") or "").strip()
     song["id"] = int(raw_id)  # ValueError if blank or not an integer
 

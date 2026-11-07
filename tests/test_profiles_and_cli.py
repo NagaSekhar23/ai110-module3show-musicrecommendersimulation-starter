@@ -125,3 +125,13 @@ def test_compare_rankings_reports_moves():
     assert "NEW  #3 D" in notes
     assert "OUT  (was #3) C" in notes
     assert "MOVE #1 -> #2 A" in notes
+
+
+def test_cli_ctrl_c_at_menu_exits_cleanly(capsys, monkeypatch):
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+
+    def interrupted(*args, **kwargs):
+        raise KeyboardInterrupt
+    monkeypatch.setattr(cli, "choose_profile_interactively", interrupted)
+    assert cli.main([]) == 130
+    assert "Cancelled." in capsys.readouterr().out

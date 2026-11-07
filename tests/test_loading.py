@@ -49,6 +49,17 @@ def test_load_songs_skips_malformed_rows(write_csv, caplog):
     assert len([r for r in caplog.records if "Skipping" in r.message]) == 7
 
 
+def test_load_songs_skips_rows_with_too_many_or_too_few_values(write_csv):
+    path = write_csv(
+        HEADER
+        + "1,Hello, World,Artist,pop,happy,0.5,100,0.5,0.5,0.5\n"  # unquoted comma -> extra value
+        + "2,Short Row,Artist,pop\n"                               # too few values
+        + "4,Trailing,Artist,pop,happy,0.5,100,0.5,0.5,0.5,EXTRA\n"  # surplus trailing value
+        + '3,"Hello, Again",Artist,pop,happy,0.5,100,0.5,0.5,0.5\n'  # quoted comma is fine
+    )
+    assert [s["title"] for s in load_songs(path)] == ["Hello, Again"]
+
+
 def test_load_songs_allows_missing_optional_numbers(write_csv):
     path = write_csv(HEADER + "1,Sparse,Artist,pop,happy,0.5,,,,\n")
     [song] = load_songs(path)

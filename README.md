@@ -12,6 +12,18 @@ It is an educational simulation. It shows how "turn data into a ranked list"
 works in principle. It does **not** reproduce Spotify's (or anyone else's)
 proprietary recommendation algorithm.
 
+### Quick start
+
+```bash
+git clone https://github.com/NagaSekhar23/ai110-module3show-musicrecommendersimulation-starter.git
+cd ai110-module3show-musicrecommendersimulation-starter
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python -m src.main --profile chill_lofi   # recommendations for one listener
+python -m src.evaluate                    # every profile + the weight experiment
+python -m pytest                          # run the test suite
+```
+
 ### Problem statement
 
 Streaming services have far more songs than anyone can browse. A recommender
@@ -149,7 +161,7 @@ user profile (src/profiles.py)                    │
 │   ├── profiles.py             3 core + 4 adversarial user profiles
 │   ├── main.py                 CLI  (python -m src.main)
 │   └── evaluate.py             evaluation + experiment report (python -m src.evaluate)
-├── tests/                      94 pytest tests
+├── tests/                      96 pytest tests
 ├── docs/evaluation_output.txt  saved output of python -m src.evaluate
 ├── model_card.md               model card
 ├── ai_interactions.md          how AI was used in this project
@@ -180,7 +192,7 @@ from energy.
 | Moods (13) | chill 3, intense 3, happy 2, relaxed 2, sad 2, and 1 each: moody, focused, romantic, confident, euphoric, nostalgic, melancholy, angry |
 | Repeat artists | Neon Echo 3, LoRoom 2 |
 
-`load_songs()` validates every row: integer id, non-empty title/genre/mood,
+`load_songs()` validates every row: the right number of columns, integer id, non-empty title/genre/mood,
 energy present, 0–1 features within range, positive tempo, no duplicate ids.
 A test checks that every row of the real file passes.
 
@@ -230,7 +242,7 @@ python -m src.evaluate                              # full evaluation + experime
 
 When no terminal is attached (e.g. input is piped), the menu is skipped and the
 default profile is used. Invalid menu input is rejected and re-asked; after three
-bad tries the default is used.
+bad tries the default is used. Ctrl+C at the menu exits cleanly.
 
 ### Run the tests
 
@@ -238,10 +250,17 @@ bad tries the default is used.
 python -m pytest        # or simply: pytest
 ```
 
-94 tests cover CSV loading and validation, numeric conversion, each scoring
+96 tests cover CSV loading and validation, numeric conversion, each scoring
 component, combined scores, ranking order, top-k, empty catalogs, invalid k and
 preferences, missing preferences, deterministic ties, dataset integrity, the
-three profiles, the CLI menu, strategies and diversity.
+three profiles, the CLI menu (including Ctrl+C), strategies and diversity.
+
+Latest run:
+
+```
+$ python -m pytest
+============================== 96 passed in 0.06s ==============================
+```
 
 ---
 
@@ -403,16 +422,17 @@ See [model_card.md](model_card.md) for the full analysis.
 
 ## Reflection
 
-Building this showed that a recommender's "intelligence" lives mostly in a few
-numbers someone chose. Changing the genre weight from 2.0 to 1.0 changed what a
-"good" recommendation was for several listeners, without any change to the data.
-The explanations were the most valuable part: every surprising result (a sad
-song for a happy listener) could be traced back to an exact point value, which
-made the bias visible instead of hidden.
+My full personal reflection is in the [Model Card, section 11](model_card.md#11-personal-reflection).
+Two key takeaways from it:
 
-It also showed where unfairness can enter quietly. Nothing in the code favours
-pop or lofi fans, but the catalog does: they have three songs to match while most
-genres have one, so they get better recommendations. With real users, the same
-effect would come from whose music is well represented in the data.
+> One of my biggest learning moments was implementing the scoring and ranking
+> logic separately. [...] I also learned how small changes to scoring weights
+> can significantly affect the final recommendations.
 
-See the [**Model Card**](model_card.md) and [**AI Interactions**](ai_interactions.md).
+> During evaluation, I discovered that the algorithm could recommend a sad song
+> to someone who preferred happy pop simply because genre matching had a higher
+> weight than mood matching. This showed me why testing and evaluating an AI
+> system is just as important as implementing it.
+
+See also [**AI Interactions**](ai_interactions.md) for how AI tools were used
+and verified in this project.

@@ -101,7 +101,7 @@ in the list.
      (**different, arguably worse**).
    - Chill Lofi and k-pop: order unchanged.
    - Conclusion: no weighting is best for everyone.
-4. **Automated tests:** 94 pytest tests, including checks that every
+4. **Automated tests:** 96 pytest tests, including checks that every
    score matches the recipe by hand-calculation, that the top results for each
    core profile have the expected genre, that ties are always broken the same
    way, and that the catalog itself has valid, unique rows.
@@ -164,14 +164,12 @@ input is rejected instead of producing nonsense.
 
 ## 11. Personal Reflection
 
-> *Draft written with AI assistance from the observed results. Edit it into
-> your own words before submitting.*
+Building this music recommendation system helped me understand how recommendation algorithms work behind the scenes. Before this project, I mostly thought music platforms recommended songs based on popularity or listening history. Through this project, I learned how a content-based recommendation system can use features such as genre, mood, and energy to calculate how closely a song matches someone's preferences.
 
-The biggest surprise was how much a single number decides. With genre worth
-2 points, a "happy pop" listener gets a sad song at #2. Halving that weight
-fixed it for them but made the rock listener's list worse. Before this project
-I assumed recommendation apps "understand" music; now I see that they rank by
-rules or learned weights, and every choice of weight is a judgment about what
-listeners care about. I also learned that bias doesn't need biased code: the
-pop and lofi profiles got better results simply because the catalog had more of
-those songs.
+One of my biggest learning moments was implementing the scoring and ranking logic separately. I learned that scoring evaluates how well an individual song matches a user's preferences, while ranking compares all the scored songs to identify the best recommendations. I also learned how small changes to scoring weights can significantly affect the final recommendations.
+
+Using AI coding tools helped me understand the project structure, implement Python functions, generate additional dataset entries, and identify potential edge cases. However, I learned that AI-generated code and explanations should not be trusted without verification. I used automated tests and actual recommendation outputs to check the implementation. During evaluation, I discovered that the algorithm could recommend a sad song to someone who preferred happy pop simply because genre matching had a higher weight than mood matching. This showed me why testing and evaluating an AI system is just as important as implementing it.
+
+Another thing that surprised me was how a relatively simple weighted-scoring algorithm could produce recommendations that felt personalized. At the same time, I discovered its limitations. Exact genre matching can overlook similar genres, and an unbalanced dataset can cause certain genres to receive better recommendations than others. This helped me understand how algorithmic bias and filter bubbles can develop even in relatively simple systems.
+
+If I continued developing this project, I would improve genre similarity so that related genres could receive partial credit instead of requiring exact matches. I would also expand the dataset with more diverse songs, introduce more user preference features, and experiment with recommendation techniques that consider listening behavior and feedback. Overall, this project improved my understanding of Python, recommendation algorithms, software testing, evaluation, and the importance of explaining how an algorithm makes its decisions.
