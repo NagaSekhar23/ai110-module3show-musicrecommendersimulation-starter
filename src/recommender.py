@@ -94,6 +94,24 @@ DEFAULT_WEIGHTS = ScoringWeights()
 # Phase 6 experiment: genre matters less, energy matters more.
 EXPERIMENT_WEIGHTS = ScoringWeights(genre=1.0, mood=1.0, energy=2.0, acoustic=0.5)
 
+# Strategy pattern: each named strategy is just a different set of weights.
+# The scoring code never changes; you swap which weights it uses.
+STRATEGIES: Dict[str, ScoringWeights] = {
+    "balanced": DEFAULT_WEIGHTS,
+    "genre_first": ScoringWeights(genre=3.0, mood=1.0, energy=0.5, acoustic=0.25),
+    "mood_first": ScoringWeights(genre=1.0, mood=2.5, energy=1.0, acoustic=0.5),
+    "energy_focused": ScoringWeights(genre=0.5, mood=0.5, energy=3.0, acoustic=0.5),
+}
+DEFAULT_STRATEGY = "balanced"
+
+
+def get_strategy(name: str) -> ScoringWeights:
+    """Look up a scoring strategy by name (raises ValueError if unknown)."""
+    try:
+        return STRATEGIES[name]
+    except KeyError:
+        raise ValueError(f"unknown strategy {name!r}; choose from {', '.join(STRATEGIES)}") from None
+
 
 # --------------------------------------------------------------------------- #
 # Loading
@@ -336,7 +354,47 @@ def _validate_k(k) -> int:
     return k
 
 
-def recommend_songs(user_prefs: Dict, songs: List[Dict], k: int = 5, weights: ScoringWeights = DEFAULT_WEIGHTS) -> List[Tuple[Dict, float, str]]:
+ARTIST_REPEAT_PENALTY = 0.75
+GENRE_REPEAT_PENALTY = 0.35
+
+
+def diversify(ranked: List[Tuple[Dict, float, List[str]]], k: int,
+              artist_penalty: float = ARTIST_REPEAT_PENALTY,
+              genre_penalty: float = GENRE_REPEAT_PENALTY) -> List[Tuple[Dict, float, List[str]]]:
+    """Re-rank so the top ``k`` is not dominated by one artist or genre.
+
+    Greedy approach: pick songs one at a time. Before each pick, every
+    remaining song loses ``artist_penalty`` for each already-picked song by
+    the same artist, and ``genre_penalty`` for each already-picked song in the
+    same genre. The best adjusted score wins. Penalties are listed in the
+    reasons so the adjustment is transparent.
+    """
+    remaining = list(ranked)
+    picked: List[Tuple[Dict, float, List[str]]] = []
+    while remaining and len(picked) < k:
+        best_index, best_item = None, None
+        for index, (song, score, reasons) in enumerate(remaining):
+            same_artist = sum(1 for p, _, _ in picked if p.get("artist") and p.get("artist") == song.get("artist"))
+            same_genre = sum(1 for p, _, _ in picked if p.get("genre") == song.get("genre"))
+            penalty = artist_penalty * same_artist + genre_penalty * same_genre
+            adjusted = round(score - penalty, 6)
+            new_reasons = list(reasons)
+            if same_artist and artist_penalty:
+                new_reasons.append(f"diversity: artist already listed x{same_artist} ({-artist_penalty * same_artist:+.2f})")
+            if same_genre and genre_penalty:
+                new_reasons.append(f"diversity: genre already listed x{same_genre} ({-genre_penalty * same_genre:+.2f})")
+            candidate = (song, adjusted, new_reasons)
+            # remaining is already in deterministic order, so strict ">" keeps ties stable
+            if best_item is None or adjusted > best_item[1]:
+                best_index, best_item = index, candidate
+        picked.append(best_item)
+        remaining.pop(best_index)
+    return picked
+
+
+def recommend_songs(user_prefs: Dict, songs: List[Dict], k: int = 5,
+                    weights: ScoringWeights = DEFAULT_WEIGHTS,
+                    diverse: bool = False) -> List[Tuple[Dict, float, str]]:
     """Return the top ``k`` songs for a user.
 
     Args:
@@ -344,7 +402,8 @@ def recommend_songs(user_prefs: Dict, songs: List[Dict], k: int = 5, weights: Sc
         songs: the catalog, e.g. from ``load_songs``. It is not modified.
         k: how many recommendations to return. ``0`` returns an empty list;
            a ``k`` larger than the catalog returns every song.
-        weights: scoring weights to use.
+        weights: scoring weights to use (see ``STRATEGIES``).
+        diverse: if True, apply ``diversify`` to limit artist/genre repeats.
 
     Returns:
         A list of ``(song, score, explanation)`` tuples, highest score first.
@@ -359,7 +418,23 @@ def recommend_songs(user_prefs: Dict, songs: List[Dict], k: int = 5, weights: Sc
         return []
 
     ranked = rank_songs(user_prefs, songs, weights)
-    return [(song, score, "; ".join(reasons)) for song, score, reasons in ranked[:k]]
+    top = diversify(ranked, k) if diverse else ranked[:k]
+    return [(song, score, "; ".join(reasons)) for song, score, reasons in top]
+
+
+def unmatched_preferences(user_prefs: Dict, songs: List[Dict]) -> List[str]:
+    """List genre/mood preferences that no song in the catalog has.
+
+    Useful for warning the user that a preference cannot be satisfied
+    (e.g. asking for "k-pop" when the catalog has none).
+    """
+    prefs = _validate_prefs(user_prefs)
+    warnings = []
+    for field in ("genre", "mood"):
+        wanted = prefs[field]
+        if wanted is not None and not any(_song_text(s, field) == wanted for s in songs):
+            warnings.append(f"no song in the catalog has {field} '{wanted}'")
+    return warnings
 
 
 # --------------------------------------------------------------------------- #

@@ -7,6 +7,7 @@ Usage (from the project root):
     python -m src.main --profile chill_lofi # skip the menu
     python -m src.main --list-profiles      # show available profiles
     python -m src.main --k 3                # change number of results
+    python -m src.main --strategy mood_first --diverse
 """
 
 import argparse
@@ -14,7 +15,14 @@ import sys
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from src.profiles import ALL_PROFILES, DEFAULT_PROFILE_KEY
-from src.recommender import DEFAULT_CSV_PATH, load_songs, recommend_songs
+from src.recommender import (
+    DEFAULT_CSV_PATH,
+    DEFAULT_STRATEGY,
+    STRATEGIES,
+    load_songs,
+    recommend_songs,
+    unmatched_preferences,
+)
 
 # Column layout for the results table: (header, width)
 COLUMNS = (("#", 2), ("Title", 26), ("Artist", 17), ("Genre", 10), ("Mood", 11), ("Energy", 6), ("Score", 5))
@@ -104,6 +112,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Content-based music recommender simulation.")
     parser.add_argument("--profile", choices=list(ALL_PROFILES), help="profile key (skips the menu)")
     parser.add_argument("--k", type=int, default=5, help="number of recommendations (default 5)")
+    parser.add_argument("--strategy", choices=list(STRATEGIES), default=DEFAULT_STRATEGY,
+                        help="scoring strategy (default: balanced = genre 2, mood 1, energy 1)")
+    parser.add_argument("--diverse", action="store_true",
+                        help="penalise repeated artists/genres in the top results")
     parser.add_argument("--list-profiles", action="store_true", help="list profiles and exit")
     return parser
 
@@ -137,9 +149,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print(f"No --profile given and no interactive terminal; using default '{profile_key}'.\n")
 
     profile = ALL_PROFILES[profile_key]
-    recommendations = recommend_songs(profile["prefs"], songs, k=args.k)
-    print_profile_results(profile["name"], profile["prefs"], recommendations,
-                          title_suffix=f"  (top {args.k})")
+    for warning in unmatched_preferences(profile["prefs"], songs):
+        print(f"Note: {warning}, so that preference cannot add points.")
+    recommendations = recommend_songs(profile["prefs"], songs, k=args.k,
+                                      weights=STRATEGIES[args.strategy], diverse=args.diverse)
+    suffix = f"  (top {args.k}, strategy={args.strategy}{', diverse' if args.diverse else ''})"
+    print_profile_results(profile["name"], profile["prefs"], recommendations, title_suffix=suffix)
     return 0
 
 

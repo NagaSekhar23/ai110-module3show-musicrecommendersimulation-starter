@@ -8,6 +8,7 @@ Sections:
   core         top 5 for the three core profiles (original weights)
   adversarial  top 5 for the edge-case profiles (original weights)
   experiment   original vs. experimental weights, side by side
+  strategies   Happy Pop Lover under every strategy, with and without diversity
 """
 
 import argparse
@@ -20,6 +21,7 @@ from src.profiles import ADVERSARIAL_PROFILES, ALL_PROFILES, CORE_PROFILES
 from src.recommender import (
     DEFAULT_WEIGHTS,
     EXPERIMENT_WEIGHTS,
+    STRATEGIES,
     ScoringWeights,
     load_songs,
     recommend_songs,
@@ -70,6 +72,18 @@ def run_experiment(songs: List[Dict], k: int = 5) -> None:
         print()
 
 
+def run_strategies(songs: List[Dict], profile_key: str = "happy_pop", k: int = 5) -> None:
+    profile = ALL_PROFILES[profile_key]
+    print(f"Profile: {profile['name']}\n")
+    for name, weights in STRATEGIES.items():
+        for diverse in (False, True):
+            results = recommend_songs(profile["prefs"], songs, k=k, weights=weights, diverse=diverse)
+            label = f"{name}{' + diverse' if diverse else ''}"
+            ranked = ", ".join(f"{s['title']} ({score:.2f})" for s, score, _ in results)
+            print(f"{label:<24} {ranked}")
+    print()
+
+
 def dataset_summary(songs: List[Dict]) -> None:
     genres = Counter(s["genre"] for s in songs)
     moods = Counter(s["mood"] for s in songs)
@@ -84,7 +98,7 @@ def dataset_summary(songs: List[Dict]) -> None:
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Evaluate the recommender.")
-    parser.add_argument("--section", choices=["all", "data", "core", "adversarial", "experiment"], default="all")
+    parser.add_argument("--section", choices=["all", "data", "core", "adversarial", "experiment", "strategies"], default="all")
     args = parser.parse_args(argv)
 
     songs = load_songs()
@@ -93,6 +107,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         "core": ("CORE PROFILES (original weights)", lambda: run_profiles(CORE_PROFILES, songs)),
         "adversarial": ("ADVERSARIAL PROFILES (original weights)", lambda: run_profiles(ADVERSARIAL_PROFILES, songs)),
         "experiment": ("EXPERIMENT: halve genre weight, double energy weight", lambda: run_experiment(songs)),
+        "strategies": ("SCORING STRATEGIES AND DIVERSITY", lambda: run_strategies(songs)),
     }
     chosen = list(sections) if args.section == "all" else [args.section]
     for key in chosen:

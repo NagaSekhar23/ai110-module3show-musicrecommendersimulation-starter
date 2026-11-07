@@ -262,3 +262,17 @@ rank original (score)                      experimental (score)
      MOVE #3 -> #2 Iron Tide
      MOVE #5 -> #3 Gym Hero
 
+
+######## SCORING STRATEGIES AND DIVERSITY ########
+
+Profile: Happy Pop Lover
+
+balanced                 Sunrise City (4.39), Static Tears (3.37), Gym Hero (3.35), Rooftop Lights (2.29), Concrete Crown (1.42)
+balanced + diverse       Sunrise City (4.39), Gym Hero (3.00), Rooftop Lights (2.29), Static Tears (1.92), Concrete Crown (1.42)
+genre_first              Sunrise City (4.70), Static Tears (3.68), Gym Hero (3.67), Rooftop Lights (1.64), Concrete Crown (0.71)
+genre_first + diverse    Sunrise City (4.70), Gym Hero (3.32), Static Tears (2.23), Rooftop Lights (1.64), Concrete Crown (0.71)
+mood_first               Sunrise City (4.89), Rooftop Lights (3.79), Static Tears (2.37), Gym Hero (2.35), Concrete Crown (1.42)
+mood_first + diverse     Sunrise City (4.89), Rooftop Lights (3.79), Gym Hero (2.00), Concrete Crown (1.42), Broken Amplifier (1.38)
+energy_focused           Sunrise City (4.35), Static Tears (3.75), Rooftop Lights (3.71), Gym Hero (3.58), Concrete Crown (3.38)
+energy_focused + diverse Sunrise City (4.35), Rooftop Lights (3.71), Concrete Crown (3.38), Gym Hero (3.23), Broken Amplifier (3.22)
+
