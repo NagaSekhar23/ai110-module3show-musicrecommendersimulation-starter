@@ -110,3 +110,18 @@ def test_menu_handles_end_of_input():
 
 def test_format_recommendations_empty():
     assert "No recommendations" in cli.format_recommendations([])
+
+
+def test_evaluate_script_runs(capsys):
+    from src import evaluate
+    assert evaluate.main([]) == 0
+    out = capsys.readouterr().out
+    assert "EXPERIMENT" in out and "Intense Rock Listener" in out
+
+
+def test_compare_rankings_reports_moves():
+    from src.evaluate import compare_rankings
+    notes = compare_rankings(["A", "B", "C"], ["B", "A", "D"])
+    assert "NEW  #3 D" in notes
+    assert "OUT  (was #3) C" in notes
+    assert "MOVE #1 -> #2 A" in notes
