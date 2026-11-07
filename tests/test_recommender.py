@@ -59,3 +59,28 @@ def test_explain_recommendation_returns_non_empty_string():
     explanation = rec.explain_recommendation(user, song)
     assert isinstance(explanation, str)
     assert explanation.strip() != ""
+
+
+# --------------------------------------------------------------------------- #
+# Additional OOP wrapper tests
+# --------------------------------------------------------------------------- #
+def test_recommend_respects_k_and_does_not_reorder_catalog():
+    rec = make_small_recommender()
+    original_order = [s.id for s in rec.songs]
+    user = UserProfile(favorite_genre="lofi", favorite_mood="chill", target_energy=0.4, likes_acoustic=True)
+
+    results = rec.recommend(user, k=1)
+
+    assert [s.title for s in results] == ["Chill Lofi Loop"]
+    assert [s.id for s in rec.songs] == original_order
+
+
+def test_explain_recommendation_mentions_matched_features():
+    rec = make_small_recommender()
+    user = UserProfile(favorite_genre="pop", favorite_mood="happy", target_energy=0.8, likes_acoustic=False)
+
+    explanation = rec.explain_recommendation(user, rec.songs[0])
+
+    assert "genre match" in explanation
+    assert "mood match" in explanation
+    assert "energy similarity" in explanation
